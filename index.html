@@ -5,50 +5,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nimra's Diary</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body.dark-mode {
-            background-color: #1a202c;
-            color: #f7fafc;
-        }
-        .dark-mode .entry, .dark-mode textarea, .dark-mode input {
-            background-color: #2d3748;
-            color: white;
-        }
-        .floating-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #2563eb;
-            color: white;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .floating-btn:hover {
-            background-color: #1d4ed8;
-        }
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-        }
-        .modal.active {
-            visibility: visible;
-            opacity: 1;
-        }
-    </style>
+    <script type="module">
+        // Import Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, deleteDoc, doc, updateDoc } 
+        from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // Your Firebase Config (Replace with your details)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_lo-9MkmtUMjtMZfvkurNMUi25qQFItc",
+            authDomain: "nmdr-54d00.firebaseapp.com",
+            projectId: "nmdr-54d00",
+            storageBucket: "nmdr-54d00.firebasestorage.app",
+            messagingSenderId: "230900513071",
+            appId: "1:230900513071:web:5363890a09055cd06509da"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const postsRef = collection(db, "posts");
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const writerName = document.getElementById("writerName");
+            const journalEntry = document.getElementById("journalEntry");
+            const saveEntry = document.getElementById("saveEntry");
+            const entriesContainer = document.getElementById("entriesContainer");
+            const modal = document.getElementById("modal");
+            const openModal = document.getElementById("openModal");
+            const closeModal = document.getElementById("closeModal");
+
+            let editPostId = null;
+
+            openModal.addEventListener("click", () => {
+                writerName.value = "";
+                journalEntry.value = "";
+                editPostId = null;
+                modal.classList.add("active");
+            });
+
+            closeModal.addEventListener("click", () => modal.classList.remove("active"));
+
+            // Save or Update Post
+            saveEntry.addEventListener("click", async () => {
+                const name = writerName.value.trim();
+                const text = journalEntry.value.trim();
+                if (name && text) {
+                    if (editPostId) {
+                        const postRef = doc(db, "posts", editPostId);
+                        await updateDoc(postRef, { name, text, date: new Date().toLocaleString() });
+                    } else {
+                        await addDoc(postsRef, { name, text, date: new Date().toLocaleString() });
+                    }
+                    modal.classList.remove("active");
+                }
+            });
+
+            // Fetch Posts in Real-Time
+            onSnapshot(postsRef, (snapshot) => {
+                entriesContainer.innerHTML = "";
+                snapshot.docs.forEach((doc) => {
+                    const entry = doc.data();
+                    const entryDiv = document.createElement("div");
+                    entryDiv.className = "p-4 border rounded-md bg-white shadow-md";
+                    entryDiv.innerHTML = `
+                        <h3 class="font-bold text-blue-600">${entry.name}</h3>
+                        <p>${entry.text}</p>
+                        <small class="text-gray-500">${entry.date}</small>
+                        <div class="mt-2 flex justify-end space-x-2">
+                            <button class="edit-btn text-blue-500" data-id="${doc.id}">Edit</button>
+                            <button class="delete-btn text-red-500" data-id="${doc.id}">Delete</button>
+                        </div>
+                    `;
+                    entriesContainer.appendChild(entryDiv);
+
+                    // Edit Post
+                    entryDiv.querySelector(".edit-btn").addEventListener("click", () => {
+                        writerName.value = entry.name;
+                        journalEntry.value = entry.text;
+                        editPostId = doc.id;
+                        modal.classList.add("active");
+                    });
+
+                    // Delete Post
+                    entryDiv.querySelector(".delete-btn").addEventListener("click", async () => {
+                        await deleteDoc(doc(db, "posts", doc.id));
+                    });
+                });
+            });
+        });
+    </script>
 </head>
-<body class="bg-gray-50 text-gray-900 transition-all">
+<body class="bg-gray-50 text-gray-900">
 
     <div class="max-w-md mx-auto p-4">
         <div class="flex justify-between items-center">
@@ -56,19 +104,18 @@
                 <div class="text-xl font-bold bg-blue-500 text-white px-3 py-1 rounded-full">N•D</div>
                 <h1 class="text-2xl font-bold">Nimra's Diary</h1>
             </div>
-            <button id="toggleMode" class="bg-gray-500 text-white px-4 py-2 rounded-md">🌙</button>
         </div>
 
         <div id="entriesContainer" class="mt-6 space-y-4"></div>
     </div>
 
-    <!-- Floating Action Button -->
+    <!-- Floating Button -->
     <button id="openModal" class="floating-btn text-3xl font-bold">+</button>
 
     <!-- Modal -->
     <div id="modal" class="modal">
-        <div class="bg-white dark-mode p-6 rounded-lg max-w-md w-full">
-            <h2 id="modalTitle" class="text-xl font-bold mb-3">New Entry</h2>
+        <div class="bg-white p-6 rounded-lg max-w-md w-full">
+            <h2 class="text-xl font-bold mb-3">New Entry</h2>
             <input id="writerName" type="text" class="w-full p-3 border rounded-md mb-2" placeholder="Your Name">
             <textarea id="journalEntry" class="w-full p-3 border rounded-md focus:outline-none" rows="5" placeholder="Write your thoughts..."></textarea>
             <div class="mt-4 flex justify-between">
@@ -78,106 +125,9 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="text-center mt-6 text-gray-500">
         Powered by <span class="font-bold">Nomi</span>
     </footer>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const writerName = document.getElementById("writerName");
-            const journalEntry = document.getElementById("journalEntry");
-            const saveEntry = document.getElementById("saveEntry");
-            const entriesContainer = document.getElementById("entriesContainer");
-            const toggleMode = document.getElementById("toggleMode");
-            const body = document.body;
-            const modal = document.getElementById("modal");
-            const openModal = document.getElementById("openModal");
-            const closeModal = document.getElementById("closeModal");
-            const modalTitle = document.getElementById("modalTitle");
-
-            let entries = JSON.parse(localStorage.getItem("entries")) || [];
-            let editIndex = null;
-            renderEntries();
-
-            if (localStorage.getItem("darkMode") === "enabled") {
-                body.classList.add("dark-mode");
-                toggleMode.innerText = "☀️";
-            }
-
-            toggleMode.addEventListener("click", () => {
-                body.classList.toggle("dark-mode");
-                localStorage.setItem("darkMode", body.classList.contains("dark-mode") ? "enabled" : "disabled");
-                toggleMode.innerText = body.classList.contains("dark-mode") ? "☀️" : "🌙";
-            });
-
-            openModal.addEventListener("click", () => {
-                writerName.value = "";
-                journalEntry.value = "";
-                modalTitle.innerText = "New Entry";
-                editIndex = null;
-                modal.classList.add("active");
-            });
-
-            closeModal.addEventListener("click", () => modal.classList.remove("active"));
-
-            saveEntry.addEventListener("click", function () {
-                const name = writerName.value.trim();
-                const text = journalEntry.value.trim();
-                if (name && text) {
-                    if (editIndex !== null) {
-                        entries[editIndex].name = name;
-                        entries[editIndex].text = text;
-                        entries[editIndex].date = new Date().toLocaleString();
-                    } else {
-                        entries.unshift({ name, text, date: new Date().toLocaleString() });
-                    }
-                    localStorage.setItem("entries", JSON.stringify(entries));
-                    writerName.value = "";
-                    journalEntry.value = "";
-                    modal.classList.remove("active");
-                    renderEntries();
-                }
-            });
-
-            function renderEntries() {
-                entriesContainer.innerHTML = "";
-                entries.forEach((entry, index) => {
-                    const entryDiv = document.createElement("div");
-                    entryDiv.className = "entry p-4 border rounded-md bg-white shadow-md";
-                    if (body.classList.contains("dark-mode")) {
-                        entryDiv.classList.add("dark-mode");
-                    }
-                    entryDiv.innerHTML = `
-                        <h3 class="font-bold text-blue-600">${entry.name}</h3>
-                        <p>${entry.text}</p>
-                        <small class="text-gray-500">${entry.date}</small>
-                        <div class="mt-2 flex justify-end space-x-2">
-                            <button class="edit-btn text-blue-500">Edit</button>
-                            <button class="delete-btn text-red-500">Delete</button>
-                        </div>
-                    `;
-                    entriesContainer.appendChild(entryDiv);
-
-                    // Edit button
-                    entryDiv.querySelector(".edit-btn").addEventListener("click", () => {
-                        writerName.value = entry.name;
-                        journalEntry.value = entry.text;
-                        modalTitle.innerText = "Edit Entry";
-                        editIndex = index;
-                        modal.classList.add("active");
-                    });
-
-                    // Delete button
-                    entryDiv.querySelector(".delete-btn").addEventListener("click", () => {
-                        entries.splice(index, 1);
-                        localStorage.setItem("entries", JSON.stringify(entries));
-                        renderEntries();
-                    });
-                });
-            }
-        });
-    </script>
 
 </body>
 </html>
