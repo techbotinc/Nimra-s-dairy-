@@ -10,7 +10,7 @@
             background-color: #1a202c;
             color: #f7fafc;
         }
-        .dark-mode .entry, .dark-mode textarea {
+        .dark-mode .entry, .dark-mode textarea, .dark-mode input {
             background-color: #2d3748;
             color: white;
         }
@@ -69,6 +69,7 @@
     <div id="modal" class="modal">
         <div class="bg-white dark-mode p-6 rounded-lg max-w-md w-full">
             <h2 id="modalTitle" class="text-xl font-bold mb-3">New Entry</h2>
+            <input id="writerName" type="text" class="w-full p-3 border rounded-md mb-2" placeholder="Your Name">
             <textarea id="journalEntry" class="w-full p-3 border rounded-md focus:outline-none" rows="5" placeholder="Write your thoughts..."></textarea>
             <div class="mt-4 flex justify-between">
                 <button id="closeModal" class="text-gray-500">Cancel</button>
@@ -84,6 +85,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const writerName = document.getElementById("writerName");
             const journalEntry = document.getElementById("journalEntry");
             const saveEntry = document.getElementById("saveEntry");
             const entriesContainer = document.getElementById("entriesContainer");
@@ -110,6 +112,7 @@
             });
 
             openModal.addEventListener("click", () => {
+                writerName.value = "";
                 journalEntry.value = "";
                 modalTitle.innerText = "New Entry";
                 editIndex = null;
@@ -119,15 +122,18 @@
             closeModal.addEventListener("click", () => modal.classList.remove("active"));
 
             saveEntry.addEventListener("click", function () {
+                const name = writerName.value.trim();
                 const text = journalEntry.value.trim();
-                if (text) {
+                if (name && text) {
                     if (editIndex !== null) {
+                        entries[editIndex].name = name;
                         entries[editIndex].text = text;
                         entries[editIndex].date = new Date().toLocaleString();
                     } else {
-                        entries.unshift({ text, date: new Date().toLocaleString() });
+                        entries.unshift({ name, text, date: new Date().toLocaleString() });
                     }
                     localStorage.setItem("entries", JSON.stringify(entries));
+                    writerName.value = "";
                     journalEntry.value = "";
                     modal.classList.remove("active");
                     renderEntries();
@@ -143,6 +149,7 @@
                         entryDiv.classList.add("dark-mode");
                     }
                     entryDiv.innerHTML = `
+                        <h3 class="font-bold text-blue-600">${entry.name}</h3>
                         <p>${entry.text}</p>
                         <small class="text-gray-500">${entry.date}</small>
                         <div class="mt-2 flex justify-end space-x-2">
@@ -154,6 +161,7 @@
 
                     // Edit button
                     entryDiv.querySelector(".edit-btn").addEventListener("click", () => {
+                        writerName.value = entry.name;
                         journalEntry.value = entry.text;
                         modalTitle.innerText = "Edit Entry";
                         editIndex = index;
