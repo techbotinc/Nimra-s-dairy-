@@ -4,108 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nimra's Diary</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module">
-        // Import Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } 
-        from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-
-        // 🔹 Replace with your Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyB_lo-9MkmtUMjtMZfvkurNMUi25qQFItc",
-            authDomain: "nmdr-54d00.firebaseapp.com",
-            projectId: "nmdr-54d00",
-            storageBucket: "nmdr-54d00.firebasestorage.app
-            messagingSenderId: "230900513071",
-            appId: "1:230900513071:web:5363890a09055cd06509da"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const postsRef = collection(db, "posts");
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const writerName = document.getElementById("writerName");
-            const journalEntry = document.getElementById("journalEntry");
-            const saveEntry = document.getElementById("saveEntry");
-            const entriesContainer = document.getElementById("entriesContainer");
-            const modal = document.getElementById("modal");
-            const openModal = document.getElementById("openModal");
-            const closeModal = document.getElementById("closeModal");
-
-            let editPostId = null;
-
-            openModal.addEventListener("click", () => {
-                writerName.value = "";
-                journalEntry.value = "";
-                editPostId = null;
-                modal.style.display = "flex";
-            });
-
-            closeModal.addEventListener("click", () => modal.style.display = "none");
-
-            // Save or Update Post
-            saveEntry.addEventListener("click", async () => {
-                const name = writerName.value.trim();
-                const text = journalEntry.value.trim();
-                if (name && text) {
-                    if (editPostId) {
-                        const postRef = doc(db, "posts", editPostId);
-                        await updateDoc(postRef, { name, text, date: new Date().toLocaleString() });
-                    } else {
-                        await addDoc(postsRef, { name, text, date: new Date().toLocaleString() });
-                    }
-                    modal.style.display = "none";
-                }
-            });
-
-            // Fetch Posts in Real-Time
-            onSnapshot(postsRef, (snapshot) => {
-                entriesContainer.innerHTML = "";
-                snapshot.docs.forEach((doc) => {
-                    const entry = doc.data();
-                    const entryDiv = document.createElement("div");
-                    entryDiv.className = "entry";
-                    entryDiv.innerHTML = `
-                        <h3>${entry.name}</h3>
-                        <p>${entry.text}</p>
-                        <small>${entry.date}</small>
-                        <div class="buttons">
-                            <button class="edit-btn" data-id="${doc.id}">Edit</button>
-                            <button class="delete-btn" data-id="${doc.id}">Delete</button>
-                        </div>
-                    `;
-                    entriesContainer.appendChild(entryDiv);
-
-                    // Edit Post
-                    entryDiv.querySelector(".edit-btn").addEventListener("click", () => {
-                        writerName.value = entry.name;
-                        journalEntry.value = entry.text;
-                        editPostId = doc.id;
-                        modal.style.display = "flex";
-                    });
-
-                    // Delete Post
-                    entryDiv.querySelector(".delete-btn").addEventListener("click", async () => {
-                        await deleteDoc(doc(db, "posts", doc.id));
-                    });
-                });
-            });
-        });
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            padding: 20px;
+            background: #f5f5f5;
             text-align: center;
+            padding: 20px;
         }
         .header {
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             font-size: 24px;
             font-weight: bold;
         }
@@ -192,8 +103,8 @@
     <div id="modal" class="modal">
         <div class="modal-content">
             <h2>New Entry</h2>
-            <input id="writerName" type="text" placeholder="Your Name" class="input">
-            <textarea id="journalEntry" placeholder="Write your thoughts..." rows="5" class="input"></textarea>
+            <input id="writerName" type="text" placeholder="Your Name" class="input" style="width: 100%; padding: 8px; margin: 5px 0;">
+            <textarea id="journalEntry" placeholder="Write your thoughts..." rows="5" class="input" style="width: 100%; padding: 8px; margin: 5px 0;"></textarea>
             <div class="buttons">
                 <button id="closeModal">Cancel</button>
                 <button id="saveEntry">Save</button>
@@ -204,6 +115,91 @@
     <footer>
         Powered by <strong>Nomi</strong>
     </footer>
+
+    <script>
+        // 🔹 Replace with your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_lo-9MkmtUMjtMZfvkurNMUi25qQFItc",
+            authDomain: "nmdr-54d00.firebaseapp.com",
+            projectId: "nmdr-54d00",
+            storageBucket: "nmdr-54d00.firebasestorage.app",
+            messagingSenderId: "230900513071",
+            appId: "1:230900513071:web:5363890a09055cd06509da"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const postsRef = db.collection("posts");
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const writerName = document.getElementById("writerName");
+            const journalEntry = document.getElementById("journalEntry");
+            const saveEntry = document.getElementById("saveEntry");
+            const entriesContainer = document.getElementById("entriesContainer");
+            const modal = document.getElementById("modal");
+            const openModal = document.getElementById("openModal");
+            const closeModal = document.getElementById("closeModal");
+
+            let editPostId = null;
+
+            openModal.addEventListener("click", () => {
+                writerName.value = "";
+                journalEntry.value = "";
+                editPostId = null;
+                modal.style.display = "flex";
+            });
+
+            closeModal.addEventListener("click", () => modal.style.display = "none");
+
+            // Save or Update Post
+            saveEntry.addEventListener("click", async () => {
+                const name = writerName.value.trim();
+                const text = journalEntry.value.trim();
+                if (name && text) {
+                    if (editPostId) {
+                        await postsRef.doc(editPostId).update({ name, text, date: new Date().toLocaleString() });
+                    } else {
+                        await postsRef.add({ name, text, date: new Date().toLocaleString() });
+                    }
+                    modal.style.display = "none";
+                }
+            });
+
+            // Fetch Posts in Real-Time
+            postsRef.orderBy("date", "desc").onSnapshot((snapshot) => {
+                entriesContainer.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const entry = doc.data();
+                    const entryDiv = document.createElement("div");
+                    entryDiv.className = "entry";
+                    entryDiv.innerHTML = `
+                        <h3>${entry.name}</h3>
+                        <p>${entry.text}</p>
+                        <small>${entry.date}</small>
+                        <div class="buttons">
+                            <button class="edit-btn" data-id="${doc.id}">Edit</button>
+                            <button class="delete-btn" data-id="${doc.id}">Delete</button>
+                        </div>
+                    `;
+                    entriesContainer.appendChild(entryDiv);
+
+                    // Edit Post
+                    entryDiv.querySelector(".edit-btn").addEventListener("click", () => {
+                        writerName.value = entry.name;
+                        journalEntry.value = entry.text;
+                        editPostId = doc.id;
+                        modal.style.display = "flex";
+                    });
+
+                    // Delete Post
+                    entryDiv.querySelector(".delete-btn").addEventListener("click", async () => {
+                        await postsRef.doc(doc.id).delete();
+                    });
+                });
+            });
+        });
+    </script>
 
 </body>
 </html>
